@@ -1,8 +1,9 @@
 # https://registry.terraform.io/providers/hashicorp/tfe/latest/docs
 terraform {
   backend "remote" {
-    hostname     = "localhost:8022"
+    hostname     = "stack.truyens.pro"
     organization = "default"
+    token = "<YOUR_TOKEN>"
 
     workspaces {
       name = "default"
