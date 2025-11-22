@@ -4,7 +4,7 @@ terraform {
     hostname     = "stack.truyens.pro"
     organization = "mike"
     # token = "<YOUR_TOKEN>"
-    token = "tfe-CCUA1UPWRTI9jckzEvz6GY3EHcVyQNPbog6-FtzvNz4"
+    token = ""
     workspaces {
       name = "mike"
     }
