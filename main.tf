@@ -3,6 +3,7 @@ resource "random_id" "server" {
   byte_length = 8
 }
 
+
 # Create 10 resources that each take ~20 seconds to apply
 # This allows testing real-time polling and status updates during apply
 
