@@ -13,4 +13,3 @@ resource "proxmox_virtual_environment_apt_repository" "test_repo" {
     deb http://deb.debian.org/debian bookworm main
   EOT
 }
-
