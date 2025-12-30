@@ -9,3 +9,4 @@ module "proxmox_test" {
 output "proxmox_version" {
   value = module.proxmox_test.proxmox_version
 }
+
