@@ -15,3 +15,8 @@ variable "proxmox_insecure" {
   default     = true
 }
 
+variable "proxmox_node" {
+  description = "Proxmox node name where the test resource will be created"
+  type        = string
+  default     = "pve"
+}
