@@ -39,6 +39,6 @@ resource "proxmox_virtual_environment_user_token" "main_terraform_token" {
 resource "proxmox_virtual_environment_acl" "terraform_sa_admin_acl" {
   path      = "/"                       # Use / path for full access
   role_id   = "PVEAdmin"                # Admin role on / path
-  token_id  = proxmox_virtual_environment_user_token.main_terraform_token.token_id
+  token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
   propagate = false
 }
