@@ -23,6 +23,7 @@ resource "proxmox_virtual_environment_user" "operations_automation" {
 # Create a token for the Terraform service account
 # registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_user_token
 resource "proxmox_virtual_environment_user_token" "main_terraform_token" {
+  depends_on = [proxmox_virtual_environment_user.operations_automation]
   user_id    = "tf-sa@pve"
   token_name = "terraform"
   
@@ -37,6 +38,7 @@ resource "proxmox_virtual_environment_user_token" "main_terraform_token" {
 # - Go to the Proxmox UI -> Permissions -> API Tokens -> add -> select user, set an ID and toggle privilege separation
 # Reference: https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_acl
 resource "proxmox_virtual_environment_acl" "terraform_sa_admin_acl" {
+  depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
   path      = "/"                       # Use / path for full access
   role_id   = "PVEAdmin"                # Admin role on / path
   token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
