@@ -8,6 +8,11 @@ output "iso_file_path" {
   value       = proxmox_virtual_environment_download_file.test_iso.id
 }
 
+output "pool_id" {
+  description = "ID of the created pool"
+  value       = proxmox_virtual_environment_pool.test_pool.pool_id
+}
+
 output "acl_id" {
   description = "ID of the created ACL"
   value       = proxmox_virtual_environment_acl.test_acl.id

@@ -16,12 +16,20 @@ resource "proxmox_virtual_environment_download_file" "test_iso" {
   verify = false
 }
 
-# Test resource: Create an ACL (Access Control List) for testing
-# This resource manages permissions for users or groups on specific paths
+# Test resource: Create a Pool for testing
+# Pools are logical groupings of VMs/resources in Proxmox
+# Reference: https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_pool
+resource "proxmox_virtual_environment_pool" "test_pool" {
+  comment = "Test pool created by StackWeaver"
+  pool_id = var.pool_id
+}
+
+# Test resource: Create a token ACL (matching what works in UI)
+# The UI shows token ACLs work (root@pam!tf), so let's test with a token
 # Reference: https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_acl
 resource "proxmox_virtual_environment_acl" "test_acl" {
-  path      = var.acl_path
-  role_id   = var.acl_role_id
-  user_id   = var.acl_user_id
-  propagate = var.acl_propagate
+  path      = "/"                       # Use / path for full access
+  role_id   = "PVEAdmin"                # Admin role on / path
+  token_id  = "root@pam!tf"             # Use the same token that works in UI
+  propagate = false
 }

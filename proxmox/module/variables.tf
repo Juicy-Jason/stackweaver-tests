@@ -17,27 +17,9 @@ variable "iso_filename" {
   default     = "debian-13.2.0-amd64-netinst.iso"
 }
 
-variable "acl_path" {
-  description = "Proxmox path where the ACL applies (e.g., /vms/100, /storage/local)"
+variable "pool_id" {
+  description = "Pool ID for the test pool"
   type        = string
-  default     = "/"
-}
-
-variable "acl_role_id" {
-  description = "Role ID to assign in the ACL (e.g., Administrator, PVEAdmin)"
-  type        = string
-  default     = "PVEAdmin"
-}
-
-variable "acl_user_id" {
-  description = "User ID to assign the role to (format: user@realm, e.g., root@pam)"
-  type        = string
-  default     = "root@pam"
-}
-
-variable "acl_propagate" {
-  description = "Whether the ACL should propagate to sub-paths"
-  type        = bool
-  default     = false
+  default     = "stackweaver-test-pool"
 }
 
