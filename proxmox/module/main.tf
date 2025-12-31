@@ -23,13 +23,3 @@ resource "proxmox_virtual_environment_pool" "test_pool" {
   comment = "Test pool created by StackWeaver"
   pool_id = var.pool_id
 }
-
-# Test resource: Create a token ACL (matching what works in UI)
-# The UI shows token ACLs work (root@pam!tf), so let's test with a token
-# Reference: https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_acl
-resource "proxmox_virtual_environment_acl" "test_acl" {
-  path      = "/"                       # Use / path for full access
-  role_id   = "PVEAdmin"                # Admin role on / path
-  token_id  = "root@pam!tf"             # Use the same token that works in UI
-  propagate = false
-}

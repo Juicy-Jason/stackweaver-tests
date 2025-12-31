@@ -20,6 +20,6 @@ variable "iso_filename" {
 variable "pool_id" {
   description = "Pool ID for the test pool"
   type        = string
-  default     = "stackweaver-test-pool"
+  default     = "stackweaver-pool"
 }
 
