@@ -12,9 +12,3 @@ output "pool_id" {
   description = "ID of the created pool"
   value       = proxmox_virtual_environment_pool.test_pool.pool_id
 }
-
-output "acl_id" {
-  description = "ID of the created ACL"
-  value       = proxmox_virtual_environment_acl.test_acl.id
-}
-
