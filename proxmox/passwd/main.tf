@@ -42,5 +42,5 @@ resource "proxmox_virtual_environment_acl" "terraform_sa_admin_acl" {
   path      = "/"                       # Use / path for full access
   role_id   = "PVEAdmin"                # Admin role on / path
   token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
-  propagate = false
+  propagate = true                      # Must be true to allow access to sub-paths like /pool, /storage, etc.
 }
