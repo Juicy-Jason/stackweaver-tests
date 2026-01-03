@@ -46,3 +46,5 @@ terraform.rc
 # planout
 
 .terraform.lock.hcl
+
+.tfvars
