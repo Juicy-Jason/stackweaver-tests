@@ -4,8 +4,11 @@
 
 - name: Install Elastic Stack on Arch Linux
   hosts: all
-  gather_facts: true
+  gather_facts: false  # Disable initially to allow Python installation if needed
   become: true
+  # Note: This playbook requires sudo password. 
+  # Provide it via: ansible-playbook ... --ask-become-pass
+  # Or set ansible_become_password in inventory/vault
   
   vars:
     elasticsearch_version: "8"  # Optional: specify version or use latest
@@ -13,6 +16,22 @@
     kibana_version: "8"          # Optional: specify version or use latest
     aur_user: "aur"              # User to use for AUR builds (non-root)
     
+  pre_tasks:
+    # Ensure Python is installed (raw module doesn't require Python on target)
+    - name: Check if Python is available
+      ansible.builtin.raw: command -v python || command -v python3 || echo "NOT_FOUND"
+      register: python_check
+      changed_when: false
+      failed_when: false
+      
+    - name: Install Python if not found
+      ansible.builtin.raw: pacman -Sy --noconfirm python
+      when: "'NOT_FOUND' in python_check.stdout"
+      changed_when: "'NOT_FOUND' in python_check.stdout"
+      
+    - name: Gather facts after Python is available
+      ansible.builtin.setup:
+      
   tasks:
     - name: Check if running on Arch Linux
       ansible.builtin.fail:
