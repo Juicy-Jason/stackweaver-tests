@@ -2,7 +2,7 @@
 # This file tests the teams API implementation
 
 resource "tfe_team" "test_team" {
-  name         = "test-team"
+  name         = "test-team-tfe-provider"
   organization = var.organization
   visibility   = "organization"
 }
