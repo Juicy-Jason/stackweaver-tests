@@ -37,3 +37,33 @@ resource "tfe_team_access" "test_team_access_custom" {
     run_tasks         = true           # Boolean
   }
 }
+
+// Project Access
+
+resource "tfe_project" "test" {
+  name         = "myproject"
+  organization = "my-org-name"
+}
+
+resource "tfe_team_project_access" "custom" {
+  access       = "custom"
+  team_id      = tfe_team.test_team.id
+  project_id   = tfe_project.test.id
+
+  project_access {
+    settings      = "read"
+    teams         = "none"
+    variable_sets = "write"
+  }
+  workspace_access {
+    state_versions = "write"
+    sentinel_mocks = "none"
+    runs           = "apply"
+    variables      = "write"
+    create         = true
+    locking        = true
+    move           = false
+    delete         = false
+    run_tasks      = false
+  }
+}
