@@ -15,11 +15,11 @@ data "tfe_workspace" "test" {
 
 // https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/team_access#argument-reference
 // Test 1: Fixed access level - read
-# resource "tfe_team_access" "test_team_access_read" {
-#   access       = "read" # Valid: read, plan, apply, write, admin, none
-#   team_id      = tfe_team.test_team.id
-#   workspace_id = data.tfe_workspace.test.id
-# }
+resource "tfe_team_access" "test_team_access_read" {
+  access       = "read" # Valid: read, plan, apply, write, admin, none
+  team_id      = tfe_team.test_team.id
+  workspace_id = data.tfe_workspace.test.id
+}
 
 
 resource "tfe_team_access" "test_team_access_custom" {
