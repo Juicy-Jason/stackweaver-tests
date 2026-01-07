@@ -42,7 +42,7 @@ data "tfe_workspace" "test" {
 
 resource "tfe_project" "test" {
   name         = "myproject"
-  organization = "my-org-name"
+  organization = var.organization
 }
 
 resource "tfe_team_project_access" "custom" {
