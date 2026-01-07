@@ -61,17 +61,17 @@ Stackweaver supports TFE token authentication. You can use either:
 
 **Bash/Zsh:**
 ```bash
-export TFE_TOKEN="tfe-mClfNZcWAVLZ3WIeokekEEnmFY8-DCI0H_GSG07kGOo"
+export TFE_TOKEN="tfe-xxx"
 ```
 
 **PowerShell:**
 ```pwsh
-$env:TFE_TOKEN="tfe-mClfNZcWAVLZ3WIeokekEEnmFY8-DCI0H_GSG07kGOo"
+$env:TFE_TOKEN="tfe-xxx"
 ```
 
 **Windows CMD:**
 ```cmd
-set TFE_TOKEN=tfe-mClfNZcWAVLZ3WIeokekEEnmFY8-DCI0H_GSG07kGOo
+set TFE_TOKEN=tfe-xxx
 ```
 
 #### Using providers.tf (Not Recommended)
@@ -83,7 +83,7 @@ terraform {
   backend "remote" {
     hostname     = "stack.truyens.pro"
     organization = "mike"
-    token        = "tfe-mClfNZcWAVLZ3WIeokekEEnmFY8-DCI0H_GSG07kGOo"
+    token        = "tfe-xxx"
     workspaces {
       name = "test"
     }
