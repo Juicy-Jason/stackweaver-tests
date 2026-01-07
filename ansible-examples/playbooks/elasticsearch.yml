@@ -167,4 +167,4 @@
           1. Enable services: systemctl enable --now elasticsearch logstash kibana
           2. Configure services as needed in /etc/elasticsearch/, /etc/logstash/, /etc/kibana/
           3. Access Kibana at http://localhost:5601 (after starting services)
-
+# To run the playbook
