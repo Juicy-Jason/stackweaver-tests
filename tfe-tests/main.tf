@@ -40,10 +40,10 @@ data "tfe_workspace" "test" {
 
 // Project Access
 
-# resource "tfe_project" "test" {
-#   name         = "myproject"
-#   organization = var.organization
-# }
+resource "tfe_project" "test" {
+  name         = "myproject"
+  organization = var.organization
+}
 
 resource "tfe_team_project_access" "custom" {
   access       = "custom"
