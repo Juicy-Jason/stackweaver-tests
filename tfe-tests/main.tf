@@ -22,21 +22,21 @@ data "tfe_workspace" "test" {
 # }
 
 
-resource "tfe_team_access" "test_team_access_custom" {
-  # When using permissions block, access will be automatically set to "custom" by the provider
-  # Do NOT set access explicitly when using permissions block
-  team_id      = tfe_team.test_team.id
-  workspace_id = data.tfe_workspace.test.id
+# resource "tfe_team_access" "test_team_access_custom" {
+#   # When using permissions block, access will be automatically set to "custom" by the provider
+#   # Do NOT set access explicitly when using permissions block
+#   team_id      = tfe_team.test_team.id
+#   workspace_id = data.tfe_workspace.test.id
 
-  permissions {
-    runs              = "apply"        # Valid: read, plan, apply
-    variables         = "write"        # Valid: none, read, write
-    state_versions    = "write"        # Valid: none, read, read-outputs, write
-    sentinel_mocks    = "read"         # Valid: none, read
-    workspace_locking = true           # Boolean
-    run_tasks         = true           # Boolean
-  }
-}
+#   permissions {
+#     runs              = "apply"        # Valid: read, plan, apply
+#     variables         = "write"        # Valid: none, read, write
+#     state_versions    = "write"        # Valid: none, read, read-outputs, write
+#     sentinel_mocks    = "read"         # Valid: none, read
+#     workspace_locking = true           # Boolean
+#     run_tasks         = true           # Boolean
+#   }
+# }
 
 // Project Access
 
