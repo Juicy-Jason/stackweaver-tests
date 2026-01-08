@@ -101,18 +101,29 @@
         creates: /usr/bin/yay
       when: yay_check.rc != 0
       
-    - name: Build and install yay package
+    - name: Build yay package (as aur_user, without installing)
       ansible.builtin.shell: |
         cd /tmp/yay-bin
-        makepkg -si --noconfirm
+        makepkg -s --noconfirm
         cd ..
-        rm -rf yay-bin
       become_user: "{{ aur_user }}"
       environment:
         HOME: "/home/{{ aur_user }}"
-      args:
-        creates: /usr/bin/yay
+      register: yay_build
       when: yay_check.rc != 0
+      
+    - name: Install yay package using pacman (as root/sysadmin)
+      ansible.builtin.shell: |
+        cd /tmp/yay-bin
+        pkg_file=$(ls *.pkg.tar.zst | head -n 1)
+        pacman -U --noconfirm "$pkg_file"
+        cd ..
+        rm -rf yay-bin
+      become: true
+      when: 
+        - yay_check.rc != 0
+        - yay_build is defined
+        - yay_build.rc == 0
       
     - name: Verify yay installation
       ansible.builtin.command: yay --version
