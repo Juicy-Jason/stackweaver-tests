@@ -146,13 +146,34 @@
       changed_when: false
       failed_when: false
       
+    - name: Display Elasticsearch installation status
+      ansible.builtin.debug:
+        msg: "Elasticsearch is {% if elasticsearch_installed.rc == 0 %}already installed{% else %}not installed - will install now{% endif %}"
+      
     - name: Install Elasticsearch from AUR
       ansible.builtin.shell: |
-        yay -S --noconfirm --needed elasticsearch-bin
+        set -o pipefail
+        yay -S --noconfirm --needed \
+          --answerclean All --answerdiff None --answeredit None --answerupgrade All \
+          elasticsearch-bin 2>&1 | tee /tmp/yay-elasticsearch.log
+        exit_code=${PIPESTATUS[0]}
+        if [ $exit_code -ne 0 ]; then
+          echo "=========================================="
+          echo "Elasticsearch installation failed with exit code: $exit_code"
+          cat /tmp/yay-elasticsearch.log
+          echo "=========================================="
+        fi
+        exit $exit_code
       # Run as sysadmin (has passwordless sudo), not root/aur_user
       become: false
-      async: 1800  # 30 minutes timeout (AUR packages can take time to build/download)
-      poll: 10     # Poll every 10 seconds
+      async: 3600  # 60 minutes timeout (AUR packages can take time to download/build)
+      poll: 15     # Poll every 15 seconds
+      register: elasticsearch_install_result
+      when: elasticsearch_installed.rc != 0
+      
+    - name: Display Elasticsearch installation output
+      ansible.builtin.debug:
+        msg: "Elasticsearch installation status: {{ elasticsearch_install_result | default('skipped') }}"
       when: elasticsearch_installed.rc != 0
       
     - name: Check if Logstash is installed
@@ -163,11 +184,23 @@
       
     - name: Install Logstash from AUR
       ansible.builtin.shell: |
-        yay -S --noconfirm --needed logstash-bin
+        set -o pipefail
+        yay -S --noconfirm --needed \
+          --answerclean All --answerdiff None --answeredit None --answerupgrade All \
+          logstash-bin 2>&1 | tee /tmp/yay-logstash.log
+        exit_code=${PIPESTATUS[0]}
+        if [ $exit_code -ne 0 ]; then
+          echo "=========================================="
+          echo "Logstash installation failed with exit code: $exit_code"
+          cat /tmp/yay-logstash.log
+          echo "=========================================="
+        fi
+        exit $exit_code
       # Run as sysadmin (has passwordless sudo), not root/aur_user
       become: false
-      async: 1800  # 30 minutes timeout
-      poll: 10     # Poll every 10 seconds
+      async: 3600  # 60 minutes timeout
+      poll: 15     # Poll every 15 seconds
+      register: logstash_install_result
       when: logstash_installed.rc != 0
       
     - name: Check if Kibana is installed
@@ -178,12 +211,62 @@
       
     - name: Install Kibana from AUR
       ansible.builtin.shell: |
-        yay -S --noconfirm --needed kibana-bin
+        set -o pipefail
+        yay -S --noconfirm --needed \
+          --answerclean All --answerdiff None --answeredit None --answerupgrade All \
+          kibana-bin 2>&1 | tee /tmp/yay-kibana.log
+        exit_code=${PIPESTATUS[0]}
+        if [ $exit_code -ne 0 ]; then
+          echo "=========================================="
+          echo "Kibana installation failed with exit code: $exit_code"
+          echo "Full error log:"
+          cat /tmp/yay-kibana.log
+          echo "=========================================="
+        fi
+        exit $exit_code
       # Run as sysadmin (has passwordless sudo), not root/aur_user
       become: false
-      async: 1800  # 30 minutes timeout
-      poll: 10     # Poll every 10 seconds
+      async: 3600  # 60 minutes timeout
+      poll: 15     # Poll every 15 seconds
+      register: kibana_install_result
       when: kibana_installed.rc != 0
+      failed_when: false  # Don't fail playbook, we'll handle it below
+      
+    - name: Display Kibana installation error if failed
+      ansible.builtin.debug:
+        var: kibana_install_result
+        verbosity: 0
+      when: 
+        - kibana_installed.rc != 0
+        - kibana_install_result is defined
+        - kibana_install_result.rc | default(0) != 0
+      
+    - name: Show Kibana error details
+      ansible.builtin.debug:
+        msg: |
+          ==========================================
+          Kibana installation FAILED
+          ==========================================
+          
+          Exit Code: {{ kibana_install_result.rc | default('unknown') }}
+          
+          Error Output:
+          {{ kibana_install_result.stderr | default('No stderr output') }}
+          
+          Full Output:
+          {{ kibana_install_result.stdout | default('No stdout output') }}
+          
+          ==========================================
+          This is a known issue with kibana-bin PKGBUILD version 9.2.3.
+          The PKGBUILD tries to modify src/setup_node_env/node_version_validator.js
+          which doesn't exist in this Kibana version.
+          
+          Workaround: Install Kibana manually or wait for PKGBUILD fix.
+          ==========================================
+      when: 
+        - kibana_installed.rc != 0
+        - kibana_install_result is defined
+        - kibana_install_result.rc | default(0) != 0
       
     - name: Verify Elastic Stack packages are installed
       ansible.builtin.pacman:
