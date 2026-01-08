@@ -27,15 +27,33 @@
       become: false  # This check doesn't need sudo
       
     # Install Python if needed
-    # Use explicit sudo in command since raw module with become can be problematic
-    # The sysadmin user should have passwordless sudo (NOPASSWD)
+    # Note: This requires sudo password or passwordless sudo (NOPASSWD)
+    # If sudo requires password, ensure ansible_become_password is set in inventory
+    # or configure passwordless sudo on the target host
     - name: Install Python if not found
-      ansible.builtin.raw: sudo -n pacman -Sy --noconfirm python
+      ansible.builtin.raw: pacman -Sy --noconfirm python
       when: "'NOT_FOUND' in python_check.stdout"
       changed_when: "'NOT_FOUND' in python_check.stdout"
-      become: false  # Use explicit sudo -n (non-interactive) in command
-      # Note: -n flag makes sudo non-interactive (fails if password required)
-      # If this fails, check that sysadmin has NOPASSWD in sudoers
+      become: true  # Use Ansible's become mechanism
+      become_method: sudo
+      register: python_install
+      
+    - name: Display Python installation result
+      ansible.builtin.debug:
+        msg: |
+          Python check result: {{ python_check.stdout }}
+          {% if python_check.stdout == 'NOT_FOUND' %}
+          Python was installed successfully (exit code: {{ python_install.rc | default('N/A') }})
+          {% else %}
+          Python already available
+          {% endif %}
+      
+    # Verify Python is now available
+    - name: Verify Python installation
+      ansible.builtin.raw: command -v python || command -v python3
+      register: python_verify
+      changed_when: false
+      become: false
       
     # Gather facts after Python is available
     - name: Gather facts after Python is available
