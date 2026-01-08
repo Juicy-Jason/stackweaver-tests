@@ -129,6 +129,7 @@
       ansible.builtin.command: yay --version
       register: yay_version
       changed_when: false
+      become: false  # No need to run as root to check version
       
     - name: Display yay version
       ansible.builtin.debug:
@@ -137,9 +138,10 @@
     - name: Update AUR database
       ansible.builtin.shell: yay -Sy --noconfirm
       changed_when: false
+      become: false  # Run as sysadmin, not root (yay warns against root)
       
     - name: Check if Elasticsearch is installed
-      ansible.builtin.command: pacman -Q elasticsearch 2>/dev/null || pacman -Q elasticsearch-bin 2>/dev/null
+      ansible.builtin.shell: pacman -Q elasticsearch 2>/dev/null || pacman -Q elasticsearch-bin 2>/dev/null
       register: elasticsearch_installed
       changed_when: false
       failed_when: false
@@ -147,13 +149,14 @@
     - name: Install Elasticsearch from AUR
       ansible.builtin.shell: |
         yay -S --noconfirm --needed elasticsearch-bin
-      become_user: "{{ aur_user }}"
-      environment:
-        HOME: "/home/{{ aur_user }}"
+      # Run as sysadmin (has passwordless sudo), not root/aur_user
+      become: false
+      async: 1800  # 30 minutes timeout (AUR packages can take time to build/download)
+      poll: 10     # Poll every 10 seconds
       when: elasticsearch_installed.rc != 0
       
     - name: Check if Logstash is installed
-      ansible.builtin.command: pacman -Q logstash 2>/dev/null || pacman -Q logstash-bin 2>/dev/null
+      ansible.builtin.shell: pacman -Q logstash 2>/dev/null || pacman -Q logstash-bin 2>/dev/null
       register: logstash_installed
       changed_when: false
       failed_when: false
@@ -161,13 +164,14 @@
     - name: Install Logstash from AUR
       ansible.builtin.shell: |
         yay -S --noconfirm --needed logstash-bin
-      become_user: "{{ aur_user }}"
-      environment:
-        HOME: "/home/{{ aur_user }}"
+      # Run as sysadmin (has passwordless sudo), not root/aur_user
+      become: false
+      async: 1800  # 30 minutes timeout
+      poll: 10     # Poll every 10 seconds
       when: logstash_installed.rc != 0
       
     - name: Check if Kibana is installed
-      ansible.builtin.command: pacman -Q kibana 2>/dev/null || pacman -Q kibana-bin 2>/dev/null
+      ansible.builtin.shell: pacman -Q kibana 2>/dev/null || pacman -Q kibana-bin 2>/dev/null
       register: kibana_installed
       changed_when: false
       failed_when: false
@@ -175,9 +179,10 @@
     - name: Install Kibana from AUR
       ansible.builtin.shell: |
         yay -S --noconfirm --needed kibana-bin
-      become_user: "{{ aur_user }}"
-      environment:
-        HOME: "/home/{{ aur_user }}"
+      # Run as sysadmin (has passwordless sudo), not root/aur_user
+      become: false
+      async: 1800  # 30 minutes timeout
+      poll: 10     # Poll every 10 seconds
       when: kibana_installed.rc != 0
       
     - name: Verify Elastic Stack packages are installed
