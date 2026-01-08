@@ -4,7 +4,7 @@ This directory contains Terraform configuration files to test the StackWeaver te
 
 ## Prerequisites
 
-1. **StackWeaver API running** (usually on `localhost:8080`)
+1. **StackWeaver API running** (usually on `localhost:8022`)
 2. **TFE Provider installed** (`terraform init` will download it)
 3. **API Token** for authentication
 4. **Test Organization** (default: "main")
@@ -26,7 +26,7 @@ You need an API token to authenticate with the StackWeaver API.
 ```bash
 # First, get a JWT token by logging in via Zitadel
 # Then create an API token:
-curl -X POST http://localhost:8080/api/v2/tokens \
+curl -X POST http://localhost:8022/api/v2/tokens \
   -H 'Authorization: Bearer <your-jwt-token>' \
   -H 'Content-Type: application/json' \
   -d '{
@@ -44,7 +44,7 @@ curl -X POST http://localhost:8080/api/v2/tokens \
 Create a `terraform.tfvars` file:
 
 ```hcl
-tfe_hostname = "localhost:8080"
+tfe_hostname = "localhost:8022"
 tfe_token    = "your-api-token-here"
 organization = "main"
 ```
@@ -52,7 +52,7 @@ organization = "main"
 **OR** set environment variables:
 
 ```bash
-export TF_VAR_tfe_hostname="localhost:8080"
+export TF_VAR_tfe_hostname="localhost:8022"
 export TF_VAR_tfe_token="your-api-token-here"
 export TF_VAR_organization="main"
 ```
@@ -86,55 +86,91 @@ StackWeaver uses Zitadel for user authentication. Users must be created in Zitad
 
 ### Create Users in Zitadel
 
+The test resources use the following test users:
+- `test@vhco.pro`
+- `test1@vhco.pro`
+
 1. Access Zitadel admin console (usually `http://localhost:8080/ui/console`)
 2. Go to **Users** > **Users**
-3. Click **New User**
-4. Enter:
-   - Email: `test@example.com`
-   - Name: `Test User`
-   - Password (or use passwordless if configured)
-5. Save the user
+3. Create the test users:
+   - **User 1:**
+     - Email: `test@vhco.pro`
+     - Name: `Test User`
+     - Password (or use passwordless if configured)
+   - **User 2:**
+     - Email: `test1@vhco.pro`
+     - Name: `Test User 1`
+     - Password (or use passwordless if configured)
+4. Save both users
 
-The user will be automatically created in StackWeaver on first login.
+The users will be automatically created in StackWeaver on first login.
 
 ### Verify Users via API
 
 ```bash
-# List organization members (requires admin token)
-curl -X GET http://localhost:8080/api/v2/organizations/main/members \
+# List organization memberships (requires admin token)
+curl -X GET http://localhost:8022/api/v2/organizations/main/organization-memberships \
   -H 'Authorization: Bearer <admin-token>'
 
 # List teams
-curl -X GET http://localhost:8080/api/v2/organizations/main/teams \
+curl -X GET http://localhost:8022/api/v2/organizations/main/teams \
   -H 'Authorization: Bearer <admin-token>'
 ```
 
 ## Testing Steps
 
-1. **Create a team via Terraform:**
+1. **Create test users in Zitadel:**
+   - Create users with emails: `test@vhco.pro` and `test1@vhco.pro`
+   - Ensure both users have logged in at least once to be created in StackWeaver
+
+2. **Create resources via Terraform:**
    ```bash
    terraform apply
    ```
 
-2. **Verify via API:**
+3. **Verify via API:**
    ```bash
-   curl -X GET http://localhost:8080/api/v2/organizations/main/teams/test-team \
+   # Check organization memberships
+   curl -X GET http://localhost:8022/api/v2/organizations/main/organization-memberships \
+     -H 'Authorization: Bearer <admin-token>'
+   
+   # Check team members
+   curl -X GET http://localhost:8022/api/v2/teams/<team-id>?include=organization-memberships \
      -H 'Authorization: Bearer <admin-token>'
    ```
 
-3. **Check Terraform state:**
+4. **Check Terraform state:**
    ```bash
    terraform show
+   terraform output
    ```
 
-4. **Update the team:**
+5. **Update resources:**
    - Modify `main.tf`
    - Run `terraform plan` and `terraform apply`
 
-5. **Destroy the team:**
+6. **Destroy resources:**
    ```bash
    terraform destroy
    ```
+
+## Test Resources
+
+The `main.tf` file includes test resources for:
+
+1. **`tfe_organization_membership.test_member`** - Adds `test@vhco.pro` to the organization
+2. **`tfe_team_organization_member.test_team_member`** - Adds `test@vhco.pro` (via organization membership) to the test team
+3. **`tfe_organization_membership.test_member_2`** - Adds `test1@vhco.pro` to the organization
+4. **`tfe_team_organization_members.test_team_members`** - Adds `test1@vhco.pro` (via organization membership) to the test team
+
+**Test Users:**
+- `test@vhco.pro` - Used for single membership and team member tests
+- `test1@vhco.pro` - Used for multiple memberships test
+
+**Note:** Before running `terraform apply`, ensure:
+- Both test users (`test@vhco.pro` and `test1@vhco.pro`) exist in Zitadel
+- The users have logged in at least once to be created in StackWeaver
+- You have the necessary permissions to create organization memberships and manage teams
 
 ## Troubleshooting
 
@@ -164,15 +200,15 @@ You can verify the implementation works by testing the API directly:
 
 ```bash
 # List teams
-curl -X GET http://localhost:8080/api/v2/organizations/main/teams \
+curl -X GET http://localhost:8022/api/v2/organizations/main/teams \
   -H 'Authorization: Bearer <token>'
 
 # Get a specific team
-curl -X GET http://localhost:8080/api/v2/organizations/main/teams/test-team \
+curl -X GET http://localhost:8022/api/v2/organizations/main/teams/test-team \
   -H 'Authorization: Bearer <token>'
 
 # Create a team
-curl -X POST http://localhost:8080/api/v2/organizations/main/teams \
+curl -X POST http://localhost:8022/api/v2/organizations/main/teams \
   -H 'Authorization: Bearer <token>' \
   -H 'Content-Type: application/json' \
   -d '{

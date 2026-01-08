@@ -67,3 +67,42 @@ resource "tfe_team_project_access" "custom" {
     run_tasks      = false
   }
 }
+
+// Organization Membership Tests
+// https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/organization_membership
+
+// Test: Create an organization membership by email
+// Note: The user must exist in Zitadel first
+resource "tfe_organization_membership" "test_member" {
+  email        = "test@vhco.pro"
+  organization = var.organization
+}
+
+// Team Organization Member Tests
+// https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/team_organization_member
+
+// Test: Add a single organization membership to a team
+// This adds the user (via their organization membership) to the team
+resource "tfe_team_organization_member" "test_team_member" {
+  team_id                    = tfe_team.test_team.id
+  organization_membership_id = tfe_organization_membership.test_member.id
+}
+
+// Team Organization Members Tests
+// https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/team_organization_members
+
+// Test: Add multiple organization memberships to a team at once
+// Create additional membership for test1@vhco.pro
+resource "tfe_organization_membership" "test_member_1" {
+  email        = "test1@vhco.pro"
+  organization = var.organization
+}
+
+// Add multiple members to the team at once
+resource "tfe_team_organization_members" "test_team_members" {
+  team_id = tfe_team.test_team.id
+
+  organization_membership_ids = [
+    tfe_organization_membership.test_member_2.id,
+  ]
+}
