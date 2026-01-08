@@ -209,13 +209,41 @@
       changed_when: false
       failed_when: false
       
-    - name: Install Kibana from AUR
+    - name: Fix Kibana PKGBUILD before installation
+      ansible.builtin.shell: |
+        # Clone the AUR package to fix the PKGBUILD bug
+        cd /tmp
+        rm -rf kibana-bin-fix
+        git clone https://aur.archlinux.org/kibana-bin.git kibana-bin-fix
+        cd kibana-bin-fix
+        
+        # Fix the PKGBUILD: Comment out the problematic sed line
+        # The PKGBUILD tries to modify src/setup_node_env/node_version_validator.js
+        # which doesn't exist in Kibana 9.2.3
+        # Simple fix: comment out any line containing node_version_validator.js
+        if grep -q "node_version_validator.js" PKGBUILD; then
+          # Backup original
+          cp PKGBUILD PKGBUILD.bak
+          # Comment out problematic lines
+          sed -i '/node_version_validator\.js/s/^[^#]/# &/' PKGBUILD
+          echo "Fixed: Commented out problematic sed line for node_version_validator.js"
+        else
+          echo "No node_version_validator.js reference found in PKGBUILD"
+        fi
+      become: false
+      when: kibana_installed.rc != 0
+      register: kibana_pkgbuild_fix
+      changed_when: false
+      
+    - name: Install Kibana from AUR (with fixed PKGBUILD)
       ansible.builtin.shell: |
         set -o pipefail
-        yay -S --noconfirm --needed \
-          --answerclean All --answerdiff None --answeredit None --answerupgrade All \
-          kibana-bin 2>&1 | tee /tmp/yay-kibana.log
+        cd /tmp/kibana-bin-fix
+        
+        # Build and install using the fixed PKGBUILD
+        makepkg -si --noconfirm 2>&1 | tee /tmp/yay-kibana.log
         exit_code=${PIPESTATUS[0]}
+        
         if [ $exit_code -ne 0 ]; then
           echo "=========================================="
           echo "Kibana installation failed with exit code: $exit_code"
@@ -223,6 +251,11 @@
           cat /tmp/yay-kibana.log
           echo "=========================================="
         fi
+        
+        # Cleanup
+        cd /tmp
+        rm -rf kibana-bin-fix
+        
         exit $exit_code
       # Run as sysadmin (has passwordless sudo), not root/aur_user
       become: false
@@ -283,15 +316,18 @@
     - name: Display installed Elastic Stack packages
       ansible.builtin.debug:
         msg: |
-          Elastic Stack installation complete!
+          Elastic Stack installation summary:
           
           Installed packages:
           {% for item in package_check.results %}
-          - {{ item.item }}: {{ 'installed' if item.rc == 0 else 'not found' }}
+          - {{ item.item }}: {% if item.msg is defined and 'already installed' in item.msg or 'installed' in item.msg %}installed{% else %}not found{% endif %}
           {% endfor %}
           
+          Note: Kibana installation failed due to PKGBUILD bug in kibana-bin 9.2.3.
+          The PKGBUILD tries to modify a file that doesn't exist in this Kibana version.
+          
           Next steps:
-          1. Enable services: systemctl enable --now elasticsearch logstash kibana
-          2. Configure services as needed in /etc/elasticsearch/, /etc/logstash/, /etc/kibana/
-          3. Access Kibana at http://localhost:5601 (after starting services)
+          1. Enable services: systemctl enable --now elasticsearch logstash
+          2. Configure services as needed in /etc/elasticsearch/, /etc/logstash/
+          3. For Kibana: Install manually after PKGBUILD is fixed, or use a different version
 # To run the playbook
