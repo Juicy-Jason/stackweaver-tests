@@ -103,7 +103,12 @@ The test resources use the following test users:
      - Password (or use passwordless if configured)
 4. Save both users
 
-The users will be automatically created in StackWeaver on first login.
+**IMPORTANT:** Users will be automatically created in StackWeaver on first login. You **must** have the test users log in at least once before creating organization memberships via Terraform.
+
+**To ensure users exist:**
+1. Log in as `test@vhco.pro` at least once (via the StackWeaver UI or API)
+2. Log in as `test1@vhco.pro` at least once (via the StackWeaver UI or API)
+3. Then run `terraform apply` to create organization memberships
 
 ### Verify Users via API
 
@@ -167,10 +172,16 @@ The `main.tf` file includes test resources for:
 - `test@vhco.pro` - Used for single membership and team member tests
 - `test1@vhco.pro` - Used for multiple memberships test
 
-**Note:** Before running `terraform apply`, ensure:
-- Both test users (`test@vhco.pro` and `test1@vhco.pro`) exist in Zitadel
-- The users have logged in at least once to be created in StackWeaver
-- You have the necessary permissions to create organization memberships and manage teams
+**IMPORTANT - Prerequisites:**
+Before running `terraform apply`, you **MUST** ensure:
+1. ✅ Both test users (`test@vhco.pro` and `test1@vhco.pro`) exist in Zitadel
+2. ✅ **Both users have logged in at least once** - This is critical! Users are only created in StackWeaver when they log in for the first time
+3. ✅ You have the necessary permissions to create organization memberships and manage teams
+
+**If you see "User with this email not found" errors:**
+- The user hasn't logged in yet
+- Have the user log in via the StackWeaver UI or API
+- Then retry `terraform apply`
 
 ## Troubleshooting
 

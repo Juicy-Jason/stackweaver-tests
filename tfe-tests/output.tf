@@ -21,5 +21,5 @@ output "team_organization_member_id" {
 
 output "team_organization_members_ids" {
   description = "The IDs of the team organization members relationships"
-  value       = tfe_team_organization_members.test_team_members.organization_membership_ids
+  value       = tolist(tfe_team_organization_members.test_team_members_1.organization_membership_ids)
 }

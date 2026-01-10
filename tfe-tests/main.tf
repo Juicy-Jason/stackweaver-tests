@@ -7,6 +7,12 @@ resource "tfe_team" "test_team" {
   visibility   = "organization"
 }
 
+resource "tfe_team" "test_team_1" {
+  name         = "test-team-tfe-provider-1"
+  organization = var.organization
+  visibility   = "organization"
+}
+
 // https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/data-sources/workspace
 data "tfe_workspace" "test" {
   name         = "stackweaver-tests-tfe-provider"
@@ -78,6 +84,11 @@ resource "tfe_organization_membership" "test_member" {
   organization = var.organization
 }
 
+resource "tfe_organization_membership" "test_member_yassin_admin" {
+  email        = "yassin@vhco.pro"
+  organization = var.organization
+}
+
 // Team Organization Member Tests
 // https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/team_organization_member
 
@@ -99,8 +110,8 @@ resource "tfe_organization_membership" "test_member_1" {
 }
 
 // Add multiple members to the team at once
-resource "tfe_team_organization_members" "test_team_members" {
-  team_id = tfe_team.test_team.id
+resource "tfe_team_organization_members" "test_team_members_1" {
+  team_id = tfe_team.test_team_1.id
 
   organization_membership_ids = [
     tfe_organization_membership.test_member_1.id,
