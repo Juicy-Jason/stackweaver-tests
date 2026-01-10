@@ -84,6 +84,11 @@ resource "tfe_organization_membership" "test_member" {
   organization = var.organization
 }
 
+resource "tfe_organization_membership" "test_member_yassin_admin" {
+  email        = "yassin@vhco.pro"
+  organization = var.organization
+}
+
 // Team Organization Member Tests
 // https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/team_organization_member
 
