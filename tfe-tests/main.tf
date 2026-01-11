@@ -115,7 +115,7 @@ resource "tfe_team_organization_member" "test_team_member" {
 
 // Test: Add multiple organization memberships to a team at once
 // Create additional membership for test1@vhco.pro
-resource "tfe_organization_membership" "test_member_1" {
+resource "tfe_organization_membership" "test_member_1_team" {
   email        = "test1@vhco.pro"
   organization = var.organization
 }
@@ -125,6 +125,6 @@ resource "tfe_team_organization_members" "test_team_members_1" {
   team_id = tfe_team.test_team_1.id
 
   organization_membership_ids = [
-    tfe_organization_membership.test_member_1.id,
+    tfe_organization_membership.test_member_1_team.id,
   ]
 }
