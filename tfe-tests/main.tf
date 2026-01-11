@@ -94,6 +94,12 @@ resource "tfe_organization_membership" "test_member_1" {
   organization = "test"
 }
 
+resource "tfe_organization_membership" "test_member_2" {
+  email        = "nonce@vhco.pro"
+  organization = "test"
+}
+
+
 // Team Organization Member Tests
 // https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/team_organization_member
 
