@@ -3,7 +3,7 @@
 # Get the PVEAdmin role
 # https://registry.terraform.io/providers/bpg/proxmox/latest/docs/data-sources/virtual_environment_role
 data "proxmox_virtual_environment_role" "pve_admin_role" {
-  role_id = "PVEAdmin"
+  role_id = "Administrator"
 }
 
 # Create the terraform service account
