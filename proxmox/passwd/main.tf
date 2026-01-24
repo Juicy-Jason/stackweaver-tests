@@ -33,14 +33,27 @@ resource "proxmox_virtual_environment_user_token" "main_terraform_token" {
   privileges_separation = true  # Important: enables privilege separation
 }
 
-# Test resource: Create a token ACL (matching what works in UI) - once we have this rights we can switch to a token based provider configuration
-# IMPORTANT: if you don't use the user_token resource above you need to manually create the token in the UI first
-# - Go to the Proxmox UI -> Permissions -> API Tokens -> add -> select user, set an ID and toggle privilege separation
-# Reference: https://registry.terraform.io/providers/bpg/proxmox/latest/docs/resources/virtual_environment_acl
+# Token ACL: root path. PVEAdmin on / provides Sys.Audit and Sys.Modify, which are required
+# for proxmox_virtual_environment_download_file (download from URL) in addition to Datastore.AllocateTemplate.
+# Reference: https://forum.proxmox.com/threads/what-privilege-for-download-from-url-iso-storage.126884/
+# Reference: https://github.com/bpg/terraform-provider-proxmox/issues/1439
+# IMPORTANT: If you do not use the user_token resource above, create the token in the UI first
+# (Permissions -> API Tokens -> add -> select user, set an ID, toggle privilege separation).
 resource "proxmox_virtual_environment_acl" "terraform_sa_admin_acl" {
   depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
-  path      = "/"                       # Use / path for full access
-  role_id   = "PVEAdmin"                # Admin role on / path
+  path      = "/"                       # Sys.Audit, Sys.Modify required on / for download-from-URL
+  role_id   = "PVEAdmin"
   token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
-  propagate = true                      # Must be true to allow access to sub-paths like /pool, /storage, etc.
+  propagate = true
+}
+
+# Token ACL: storage path for download_from_url (proxmox_virtual_environment_download_file).
+# Datastore.AllocateTemplate on /storage/{id} is required. Use /storage/local for the "local" datastore;
+# if you use others (e.g. local-lvm), add an ACL for /storage/<datastore_id>.
+resource "proxmox_virtual_environment_acl" "terraform_sa_storage_local" {
+  depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
+  path      = "/storage/local-lvm"
+  role_id   = "PVEAdmin"                # Includes Datastore.AllocateTemplate
+  token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
+  propagate = true
 }
