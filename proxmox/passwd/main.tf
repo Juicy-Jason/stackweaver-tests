@@ -52,6 +52,14 @@ resource "proxmox_virtual_environment_acl" "terraform_sa_admin_acl" {
 # if you use others (e.g. local-lvm), add an ACL for /storage/<datastore_id>.
 resource "proxmox_virtual_environment_acl" "terraform_sa_storage_local" {
   depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
+  path      = "/storage/local"
+  role_id   = "PVEAdmin"                # Includes Datastore.AllocateTemplate
+  token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
+  propagate = true
+}
+
+resource "proxmox_virtual_environment_acl" "terraform_sa_storage_local_lvm" {
+  depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
   path      = "/storage/local-lvm"
   role_id   = "PVEAdmin"                # Includes Datastore.AllocateTemplate
   token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
