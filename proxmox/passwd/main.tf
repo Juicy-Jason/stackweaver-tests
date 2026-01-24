@@ -33,16 +33,17 @@ resource "proxmox_virtual_environment_user_token" "main_terraform_token" {
   privileges_separation = true  # Important: enables privilege separation
 }
 
-# Token ACL: root path. PVEAdmin on / provides Sys.Audit and Sys.Modify, which are required
-# for proxmox_virtual_environment_download_file (download from URL) in addition to Datastore.AllocateTemplate.
+# Token ACL: root path. PVEAdmin does NOT include Sys.Modify; download-from-URL requires it on /.
+# The Administrator role is the only built-in that has Sys.Modify. Use it so
+# proxmox_virtual_environment_download_file (download from URL) works.
 # Reference: https://forum.proxmox.com/threads/what-privilege-for-download-from-url-iso-storage.126884/
 # Reference: https://github.com/bpg/terraform-provider-proxmox/issues/1439
 # IMPORTANT: If you do not use the user_token resource above, create the token in the UI first
 # (Permissions -> API Tokens -> add -> select user, set an ID, toggle privilege separation).
 resource "proxmox_virtual_environment_acl" "terraform_sa_admin_acl" {
   depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
-  path      = "/"                       # Sys.Audit, Sys.Modify required on / for download-from-URL
-  role_id   = "PVEAdmin"
+  path      = "/"
+  role_id   = "Administrator"           # Includes Sys.Modify; PVEAdmin does not
   token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
   propagate = true
 }
@@ -50,18 +51,18 @@ resource "proxmox_virtual_environment_acl" "terraform_sa_admin_acl" {
 # Token ACL: storage path for download_from_url (proxmox_virtual_environment_download_file).
 # Datastore.AllocateTemplate on /storage/{id} is required. Use /storage/local for the "local" datastore;
 # if you use others (e.g. local-lvm), add an ACL for /storage/<datastore_id>.
-resource "proxmox_virtual_environment_acl" "terraform_sa_storage_local" {
-  depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
-  path      = "/storage/local"
-  role_id   = "PVEAdmin"                # Includes Datastore.AllocateTemplate
-  token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
-  propagate = true
-}
+# resource "proxmox_virtual_environment_acl" "terraform_sa_storage_local" {
+#   depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
+#   path      = "/storage/local"
+#   role_id   = "PVEAdmin"                # Includes Datastore.AllocateTemplate
+#   token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
+#   propagate = true
+# }
 
-resource "proxmox_virtual_environment_acl" "terraform_sa_storage_local_lvm" {
-  depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
-  path      = "/storage/local-lvm"
-  role_id   = "PVEAdmin"                # Includes Datastore.AllocateTemplate
-  token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
-  propagate = true
-}
+# resource "proxmox_virtual_environment_acl" "terraform_sa_storage_local_lvm" {
+#   depends_on = [proxmox_virtual_environment_user_token.main_terraform_token]
+#   path      = "/storage/local-lvm"
+#   role_id   = "PVEAdmin"                # Includes Datastore.AllocateTemplate
+#   token_id  = proxmox_virtual_environment_user_token.main_terraform_token.id
+#   propagate = true
+# }
