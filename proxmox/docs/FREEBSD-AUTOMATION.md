@@ -307,6 +307,7 @@ You can automate step 3 with a **Packer post-processor** (e.g. custom script tha
 - [cloud-init – NoCloud](https://cloudinit.readthedocs.io/en/latest/reference/datasources/nocloud.html)
 - [cloud-init – Datasources](https://cloudinit.readthedocs.io/en/latest/reference/datasources.html)
 - [bsdinstall(8)](https://man.freebsd.org/bsdinstall/8), [FreeBSD forums – bsdinstall scripted](https://forums.freebsd.org/threads/bsdinstall-unattended-scripted-install.28862/)
+- [freeBSD MAN pages](https://man.freebsd.org/cgi/man.cgi?eventfd)
 
 ---
 
