@@ -24,8 +24,18 @@ data "tfe_workspace" "test-workspace" {
   organization = "main"
 }
 
+data "tfe_workspace" "mikeshop-api" {
+  name         = "mikeshop-api"
+  organization = "main"
+}
+
 resource "tfe_agent_pool_allowed_workspaces" "allowed_workspaces" {
   agent_pool_id         = tfe_agent_pool.test-agent-pool.id
   allowed_workspace_ids = [data.tfe_workspace.test-workspace.id]
 }
 
+// Ensure permissions are assigned second
+resource "tfe_agent_pool_excluded_workspaces" "excluded" {
+  agent_pool_id          = tfe_agent_pool.test-agent-pool.id
+  excluded_workspace_ids = [data.tfe_workspace.mikeshop-api.id]
+}
