@@ -10,7 +10,7 @@ resource "tfe_agent_pool" "test-agent-pool" {
 }
 
 data "tfe_project" "default-project" {
-  name         = "default-provider"
+  name         = "default"
   organization = "main"
 }
 
