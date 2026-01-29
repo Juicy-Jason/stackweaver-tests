@@ -1,5 +1,5 @@
 resource "tfe_organization" "test-organization" {
-  name  = "stackweaver-tests-tfe-provider"
+  name  = "stackweaver-tests-1"
   email = "admin@zitadel.localhost"
 }
 
@@ -19,7 +19,12 @@ resource "tfe_agent_pool_allowed_projects" "allowed_projects" {
   allowed_project_ids   = [data.tfe_project.default-project.id]
 }
 
-# resource "tfe_agent_pool_allowed_workspaces" "allowed_workspaces" {
-#   agent_pool_id         = tfe_agent_pool.test-agent-pool.id
-#   allowed_workspace_ids = [data.tfe_workspace.test-workspace.id]
-# }
+data "tfe_workspace" "test-workspace" {
+  name         = "stackweaver-tests-main"
+  organization = "main"
+}
+
+resource "tfe_agent_pool_allowed_workspaces" "allowed_workspaces" {
+  agent_pool_id         = tfe_agent_pool.test-agent-pool.id
+  allowed_workspace_ids = [data.tfe_workspace.test-workspace.id]
+}
