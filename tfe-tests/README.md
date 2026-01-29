@@ -2,6 +2,10 @@
 
 This directory contains Terraform configuration files to test the StackWeaver teams API implementation using the `terraform-provider-tfe`.
 
+```sh
+git add . && git commit -am 'chore: testing provider' && git push origin main
+```
+
 ## Prerequisites
 
 1. **StackWeaver API running** (usually on `localhost:8022`)
