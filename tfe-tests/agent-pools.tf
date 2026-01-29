@@ -28,3 +28,4 @@ resource "tfe_agent_pool_allowed_workspaces" "allowed_workspaces" {
   agent_pool_id         = tfe_agent_pool.test-agent-pool.id
   allowed_workspace_ids = [data.tfe_workspace.test-workspace.id]
 }
+
