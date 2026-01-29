@@ -1,6 +1,6 @@
 resource "tfe_organization" "test-organization" {
   name  = "stackweaver-tests-tfe-provider"
-  email = "admin@@vhco.pro"
+  email = "admin@zitadel.localhost"
 }
 
 resource "tfe_agent_pool" "test-agent-pool" {
