@@ -1,10 +1,10 @@
 ---
-# Simple playbook that works without any inventory
-# Good for testing basic Ansible functionality
+# Simple playbook that runs on all hosts in your configured inventory.
+# Use this to verify StackWeaver Ansible integration and inventory connectivity. If you want to run without inventory, use hosts: localhost and connection: local.
 
 - name: Hello World Playbook
-  hosts: localhost
-  connection: local
+  hosts: all # hosts: localhost
+  # connection: local
   gather_facts: true
 
   tasks:
