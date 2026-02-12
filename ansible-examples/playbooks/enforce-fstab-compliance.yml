@@ -1,0 +1,164 @@
+---
+# Enforce SCB-compliant mount options in /etc/fstab.
+# 1) Check current mount options  2) Backup /etc/fstab  3) Update  4) On failure -> rollback.
+# Run: ansible-playbook -i ../inventory/hosts.ini enforce-fstab-compliance.yml
+# Check only (no backup/update): ansible-playbook -i ../inventory/hosts.ini enforce-fstab-compliance.yml -e fstab_compliance_check_only=true
+
+- name: Enforce SCB mount options in /etc/fstab
+  hosts: all
+  gather_facts: true
+
+  vars:
+    fstab_compliance_check_only: false
+    fstab_backup_dir: /etc
+    fstab_backup_prefix: fstab.backup.ansible
+
+    fstab_compliance_options:
+      "/": "errors=remount-ro"
+      "/tmp": "nodev,nosuid,noexec"
+      "/var/tmp": "nodev,nosuid,noexec"
+      "/home": "nodev"
+      "/dev/shm": "nodev,nosuid,noexec"
+      "/run/shm": "nodev,nosuid,noexec"
+
+  tasks:
+    # --- Phase 1: Check current mount options ---
+    - name: Read /etc/fstab
+      ansible.builtin.slurp:
+        src: /etc/fstab
+      register: fstab_raw
+
+    - name: Parse fstab into list of entries
+      ansible.builtin.set_fact:
+        fstab_entries: "{{ fstab_entries | default([]) + [entry] }}"
+      loop: "{{ (fstab_raw.content | b64decode).strip().split('\n') }}"
+      vars:
+        _raw: "{{ (item | trim) | regex_replace('\\s+', ' ') }}"
+        _p: "{{ _raw | split(' ') }}"
+        entry:
+          device: "{{ _p[0] }}"
+          path: "{{ _p[1] }}"
+          fstype: "{{ _p[2] }}"
+          options: "{{ _p[3] | default('defaults') }}"
+          dump: "{{ _p[4] | default('0') }}"
+          passno: "{{ _p[5] | default('0') }}"
+      when:
+        - _raw | length > 0
+        - not (_raw is match('^#'))
+        - (_raw | split(' ')) | length >= 4
+
+    - name: Build list of fstab updates (merge compliance options)
+      ansible.builtin.set_fact:
+        fstab_updates: "{{ fstab_updates | default([]) + [update] }}"
+      loop: "{{ fstab_entries | default([]) }}"
+      vars:
+        _path: "{{ item.path }}"
+        _required: "{{ fstab_compliance_options[_path] | default('') }}"
+        _current_list: "{{ item.options | split(',') | map('trim') | select() | list }}"
+        _required_list: "{{ _required | split(',') | map('trim') | select() | list }}"
+        _merged_list: "{{ _current_list | union(_required_list) | list }}"
+        _merged_opts: "{{ _merged_list | join(',') }}"
+        _missing: "{{ _required_list | difference(_current_list) | list }}"
+        update:
+          path: "{{ _path }}"
+          device: "{{ item.device }}"
+          fstype: "{{ item.fstype }}"
+          options_current: "{{ item.options }}"
+          options_merged: "{{ _merged_opts }}"
+          changed: "{{ _missing | length > 0 }}"
+      when:
+        - _path in fstab_compliance_options
+        - _required | length > 0
+
+    - name: Report current mount options (targeted entries)
+      ansible.builtin.debug:
+        msg: "{{ item.path }}  device={{ item.device }}  fstype={{ item.fstype }}  current_options={{ item.options_current }}{% if item.changed %}  →  will set: {{ item.options_merged }}{% else %}  (compliant){% endif %}"
+      loop: "{{ fstab_updates | default([]) }}"
+
+    - name: Report no updates needed
+      ansible.builtin.debug:
+        msg: "All targeted mount points already have required options. No backup or update."
+      when: (fstab_updates | default([]) | selectattr('changed') | list | length == 0) and (fstab_updates | default([]) | length > 0)
+
+    - name: Skip backup and update (check-only mode)
+      ansible.builtin.debug:
+        msg: "Check-only mode: no backup or changes made."
+      when: fstab_compliance_check_only | bool
+
+    # --- Phase 2: Backup /etc/fstab (only when there are changes to apply) ---
+    - name: Set backup path for this host
+      ansible.builtin.set_fact:
+        fstab_backup_path: "{{ fstab_backup_dir }}/{{ fstab_backup_prefix }}.{{ ansible_date_time.epoch }}"
+      when:
+        - not (fstab_compliance_check_only | bool)
+        - (fstab_updates | default([]) | selectattr('changed') | list | length > 0)
+
+    - name: Backup /etc/fstab before update
+      ansible.builtin.copy:
+        content: "{{ fstab_raw.content | b64decode }}"
+        dest: "{{ fstab_backup_path }}"
+        mode: "0644"
+        force: false
+      when:
+        - not (fstab_compliance_check_only | bool)
+        - (fstab_updates | default([]) | selectattr('changed') | list | length > 0)
+
+    - name: Record backup location
+      ansible.builtin.debug:
+        msg: "Backup created: {{ fstab_backup_path }}"
+      when:
+        - not (fstab_compliance_check_only | bool)
+        - (fstab_updates | default([]) | selectattr('changed') | list | length > 0)
+
+    # --- Phase 3: Update fstab and remount (with rollback on failure) ---
+    - name: Update fstab and remount (rollback on failure)
+      block:
+        - name: Update fstab entry with compliant options
+          ansible.builtin.mount:
+            path: "{{ item.path }}"
+            src: "{{ item.device }}"
+            fstype: "{{ item.fstype }}"
+            opts: "{{ item.options_merged }}"
+            state: present
+          loop: "{{ fstab_updates | default([]) | selectattr('changed') | list }}"
+          when: (fstab_updates | default([]) | selectattr('changed') | list | length > 0)
+
+        - name: Remount to apply new options immediately
+          ansible.builtin.command:
+            - mount
+            - -o
+            - "remount,{{ item.options_merged }}"
+            - "{{ item.path }}"
+          loop: "{{ fstab_updates | default([]) | selectattr('changed') | list }}"
+          when:
+            - item.fstype != 'swap'
+            - item.path != 'none'
+          changed_when: true
+      rescue:
+        - name: Rollback – restore /etc/fstab from backup
+          ansible.builtin.copy:
+            src: "{{ fstab_backup_path }}"
+            dest: /etc/fstab
+            remote_src: true
+            mode: "0644"
+            force: true
+
+        - name: Rollback – remount with previous options (from backup)
+          ansible.builtin.command:
+            - mount
+            - -o
+            - remount
+            - "{{ item.path }}"
+          loop: "{{ fstab_updates | default([]) | selectattr('changed') | list }}"
+          when:
+            - item.fstype != 'swap'
+            - item.path != 'none'
+          ignore_errors: true
+          changed_when: false
+
+        - name: Fail after rollback
+          ansible.builtin.fail:
+            msg: "Update failed. /etc/fstab was restored from {{ fstab_backup_path }}. Fix the error and re-run."
+      when:
+        - not (fstab_compliance_check_only | bool)
+        - (fstab_updates | default([]) | selectattr('changed') | list | length > 0)
