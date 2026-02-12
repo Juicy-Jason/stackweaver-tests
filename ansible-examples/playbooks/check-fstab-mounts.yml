@@ -1,0 +1,31 @@
+---
+# Check mount options in /etc/fstab.
+# Reads fstab, parses entries, and reports device, mount point, fstype, and options for each line.
+# Run: ansible-playbook -i ../inventory/hosts.ini check-fstab-mounts.yml
+
+- name: Check /etc/fstab mount options
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Read /etc/fstab
+      ansible.builtin.slurp:
+        src: /etc/fstab
+      register: fstab_raw
+
+    - name: Report fstab mount options
+      ansible.builtin.debug:
+        msg: "{{ _parts[0] }}  →  {{ _parts[1] }}  ({{ _parts[2] }})  options: {{ _parts[3] | default('(none)') }}"
+      loop: "{{ (fstab_raw.content | b64decode).strip().split('\n') }}"
+      vars:
+        _line: "{{ (item | trim) | regex_replace('\\s+', ' ') }}"
+        _parts: "{{ _line | split(' ') }}"
+      when:
+        - _line | length > 0
+        - not (_line is match('^#'))
+        - (_line | split(' ')) | length >= 4
+
+    - name: No valid fstab entries found
+      ansible.builtin.debug:
+        msg: "No non-comment mount entries in /etc/fstab"
+      when: (fstab_raw.content | b64decode).strip().split('\n') | reject('match', '^\\s*#') | reject('match', '^\\s*$') | list | length == 0
