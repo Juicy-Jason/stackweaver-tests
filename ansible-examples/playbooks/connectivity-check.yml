@@ -1,0 +1,16 @@
+---
+# Connectivity check playbook.
+# Verifies SSH and Python on all inventory hosts. Use to confirm targets are reachable before running other playbooks.
+
+
+- name: Connectivity check !!!!!!!
+  hosts: all
+  gather_facts: true
+
+  tasks:
+    - name: Ping host (SSH + Python check)
+      ansible.builtin.ping:
+
+    - name: Report connectivity
+      ansible.builtin.debug:
+        msg: "OK | {{ ansible_hostname }} ({{ ansible_default_ipv4.address | default(ansible_host) }}) | {{ ansible_distribution | default('N/A') }} {{ ansible_distribution_version | default('') }}"
