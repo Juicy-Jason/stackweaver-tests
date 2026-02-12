@@ -125,10 +125,11 @@
 
         - name: Remount to apply new options immediately
           ansible.builtin.command:
-            - mount
-            - -o
-            - "remount,{{ item.options_merged }}"
-            - "{{ item.path }}"
+            cmd:
+              - mount
+              - -o
+              - "remount,{{ item.options_merged }}"
+              - "{{ item.path }}"
           loop: "{{ fstab_updates | default([]) | selectattr('changed') | list }}"
           when:
             - item.fstype != 'swap'
@@ -145,10 +146,11 @@
 
         - name: Rollback – remount with previous options (from backup)
           ansible.builtin.command:
-            - mount
-            - -o
-            - remount
-            - "{{ item.path }}"
+            cmd:
+              - mount
+              - -o
+              - remount
+              - "{{ item.path }}"
           loop: "{{ fstab_updates | default([]) | selectattr('changed') | list }}"
           when:
             - item.fstype != 'swap'
