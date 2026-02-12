@@ -13,19 +13,24 @@
         src: /etc/fstab
       register: fstab_raw
 
-    - name: Report fstab mount options
-      ansible.builtin.debug:
-        msg: "{{ _parts[0] }}  →  {{ _parts[1] }}  ({{ _parts[2] }})  options: {{ _parts[3] | default('(none)') }}"
+    - name: Build fstab report lines
+      ansible.builtin.set_fact:
+        fstab_report: "{{ fstab_report | default([]) + [report_line] }}"
       loop: "{{ (fstab_raw.content | b64decode).strip().split('\n') }}"
       vars:
-        _line: "{{ (item | trim) | regex_replace('\\s+', ' ') }}"
-        _parts: "{{ _line | split(' ') }}"
+        _raw_line: "{{ (item | trim) | regex_replace('\\s+', ' ') }}"
+        _parts: "{{ _raw_line | split(' ') }}"
+        report_line: "{{ _parts[0] }}  →  {{ _parts[1] }}  ({{ _parts[2] }})  options: {{ _parts[3] | default('(none)') }}"
       when:
-        - _line | length > 0
-        - not (_line is match('^#'))
-        - (_line | split(' ')) | length >= 4
+        - _raw_line | length > 0
+        - not (_raw_line is match('^#'))
+        - _parts | length >= 4
+
+    - name: Report fstab mount options
+      ansible.builtin.debug:
+        msg: "{{ fstab_report | default(['No mount entries']) | join('\n') }}"
 
     - name: No valid fstab entries found
       ansible.builtin.debug:
         msg: "No non-comment mount entries in /etc/fstab"
-      when: (fstab_raw.content | b64decode).strip().split('\n') | reject('match', '^\\s*#') | reject('match', '^\\s*$') | list | length == 0
+      when: (fstab_report | default([])) | length == 0
