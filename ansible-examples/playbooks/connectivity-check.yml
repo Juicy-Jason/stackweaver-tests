@@ -1,9 +1,9 @@
 ---
 # Connectivity check playbook.
 # Verifies SSH and Python on all inventory hosts. Use to confirm targets are reachable before running other playbooks.
-# Run: ansible-playbook -i ../inventory/hosts.ini connectivity-check.yml
 
-- name: Connectivity check
+
+- name: Connectivity check !!!!!!!
   hosts: all
   gather_facts: true
 
